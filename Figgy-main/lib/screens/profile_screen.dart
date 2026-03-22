@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:figgy_app/theme/app_theme.dart';
 import 'package:figgy_app/screens/main_wrapper.dart';
+import 'package:figgy_app/screens/demand_screen.dart';
+import 'package:figgy_app/screens/history_screen.dart';
 
 class ProfileScreen extends StatelessWidget {
   const ProfileScreen({super.key});
@@ -43,6 +45,11 @@ class ProfileScreen extends StatelessWidget {
                     label: 'DELIVERIES',
                     value: '12',
                   ),
+                  const SizedBox(height: AppSpacing.section),
+
+                  _buildSectionHeader("Recent Deliveries"),
+                  const SizedBox(height: AppSpacing.standard),
+                  _buildDeliveryHistory(),
                   const SizedBox(height: AppSpacing.section),
 
                   _buildSectionHeader("Quick Actions"),
@@ -176,6 +183,125 @@ class ProfileScreen extends StatelessWidget {
             children: [
               Text(label, style: AppTypography.small.copyWith(fontSize: 10, fontWeight: FontWeight.w600, color: AppColors.textSecondary)),
               Text(value, style: AppTypography.h2.copyWith(fontWeight: FontWeight.w800)),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildDeliveryHistory() {
+    return ValueListenableBuilder<List<Ride>>(
+      valueListenable: globalCompletedRidesNotifier,
+      builder: (context, rides, _) {
+        if (rides.isEmpty) {
+          return Padding(
+            padding: const EdgeInsets.symmetric(vertical: 32),
+            child: Text("No deliveries completed yet.", 
+              style: AppTypography.small.copyWith(color: AppColors.textMuted)),
+          );
+        }
+
+        return Column(
+          children: [
+            ...rides.take(4).map((ride) {
+              final h = ride.endTime!.hour;
+              final m = ride.endTime!.minute.toString().padLeft(2, '0');
+              final period = h >= 12 ? 'PM' : 'AM';
+              final displayH = h > 12 ? h - 12 : (h == 0 ? 12 : h);
+              
+              final now = DateTime.now();
+              final end = ride.endTime!;
+              final diff = DateTime(now.year, now.month, now.day).difference(DateTime(end.year, end.month, end.day)).inDays;
+              
+              String dateStr;
+              if (diff == 0) {
+                dateStr = 'Today';
+              } else if (diff == 1) {
+                dateStr = 'Yesterday';
+              } else {
+                const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+                dateStr = '${end.day} ${months[end.month - 1]}';
+              }
+              
+              final timeStr = '$dateStr, $displayH:$m $period';
+
+              return Padding(
+                padding: const EdgeInsets.only(bottom: 12),
+                child: _buildHistoryCard(
+                  timeStr,
+                  ride.restaurantName,
+                  ride.customerAddress,
+                  '₹${ride.earnings}',
+                ),
+              );
+            }),
+            if (rides.length > 4) ...[
+              const SizedBox(height: 12),
+              Center(
+                child: InkWell(
+                  onTap: () {
+                    Navigator.push(context, MaterialPageRoute(builder: (_) => const HistoryScreen()));
+                  },
+                  child: Padding(
+                    padding: const EdgeInsets.all(8.0),
+                    child: Text('View Full History', 
+                      style: AppTypography.small.copyWith(color: AppColors.brandPrimary, fontWeight: FontWeight.w800)),
+                  ),
+                ),
+              ),
+            ]
+          ],
+        );
+      },
+    );
+  }
+
+  Widget _buildHistoryCard(String datetime, String pickup, String drop, String earnings) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppColors.border),
+        boxShadow: AppStyles.softShadow,
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(datetime, style: AppTypography.small.copyWith(color: AppColors.textSecondary, fontWeight: FontWeight.w700)),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                decoration: BoxDecoration(color: AppColors.success.withOpacity(0.1), borderRadius: BorderRadius.circular(8)),
+                child: Text('Delivered', style: AppTypography.small.copyWith(color: AppColors.success, fontWeight: FontWeight.w800, fontSize: 10)),
+              ),
+            ],
+          ),
+          const Divider(height: 24, color: AppColors.border),
+          Row(
+            children: [
+              Column(
+                children: [
+                  Container(width: 8, height: 8, decoration: const BoxDecoration(color: Colors.green, shape: BoxShape.circle)),
+                  Container(width: 2, height: 18, color: AppColors.border),
+                  Container(width: 8, height: 8, decoration: BoxDecoration(color: AppColors.error, borderRadius: BorderRadius.circular(2))),
+                ],
+              ),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(pickup, style: AppTypography.bodySmall.copyWith(fontWeight: FontWeight.w800)),
+                    const SizedBox(height: 10),
+                    Text(drop, style: AppTypography.bodySmall.copyWith(fontWeight: FontWeight.w800, color: AppColors.textSecondary)),
+                  ],
+                ),
+              ),
+              Text(earnings, style: AppTypography.h3.copyWith(color: AppColors.brandPrimary, fontSize: 18)),
             ],
           ),
         ],

@@ -137,7 +137,7 @@ def generate_worker_data(identifier: str) -> Dict[str, Any]:
             "weekly_deliveries": random.randint(80, 150),
             "total_deliveries": random.randint(800, 4500),
             "acceptance_rate": random.randint(85, 98),
-            "rating": round(random.uniform(4.2, 4.9), 1)
+            "rating": float(f"{random.uniform(4.2, 4.9):.1f}")
         },
         
         "incentives": {

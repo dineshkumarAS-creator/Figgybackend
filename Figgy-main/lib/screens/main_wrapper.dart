@@ -124,11 +124,11 @@ class _MainWrapperState extends State<MainWrapper> {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceAround,
         children: [
-          _buildNavItem(Icons.home_outlined, 'HOME', 0),
-          _buildNavItem(Icons.show_chart_rounded, 'EARNINGS', 1),
-          _buildNavItem(Icons.radar_rounded, 'RADAR', 2),
-          _buildNavItem(Icons.shield_rounded, 'INSURANCE', 3),
-          _buildNavItem(Icons.person_outline_rounded, 'PROFILE', 4),
+          _buildNavItem(Icons.home_outlined, 'Home', 0),
+          _buildNavItem(Icons.show_chart_rounded, 'Earnings', 1),
+          _buildNavItem(Icons.radar_rounded, 'Radar', 2),
+          _buildNavItem(Icons.shield_rounded, 'Insurance', 3),
+          _buildNavItem(Icons.person_outline_rounded, 'Profile', 4),
         ],
       ),
     );
