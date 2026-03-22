@@ -1,5 +1,6 @@
 import random
 import string
+from datetime import datetime
 from flask import Blueprint, request, jsonify
 from app.utils.mock_generator import generate_worker_data
 from app.models import db_handler
@@ -72,13 +73,18 @@ def register_worker():
             
         worker_id = generate_worker_id()
         
-        # Build document
+        # 🧪 DEEP REGISTRATION: Merge full rich mock data (KYC, Bank, Stats)
+        full_mock_data = generate_worker_data(identifier) or {}
+        
         worker_doc = {
+            **full_mock_data,
             "worker_id": worker_id,
             "swiggy_id": swiggy_id,
             "income_category": cat,
             "suggested_premium": prem,
-            **{k: v for k, v in data.items() if k not in ["_id", "worker_id"]}
+            "created_at": datetime.now().isoformat(),
+            # Merge screen data over mock data to respect user inputs
+            **{k: v for k, v in data.items() if k not in ["_id", "worker_id", "created_at"]}
         }
         
         # Store using unified handler
