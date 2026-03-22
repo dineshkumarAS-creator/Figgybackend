@@ -1,5 +1,7 @@
 import 'dart:async';
 import 'dart:math';
+import 'dart:convert';
+import 'package:http/http.dart' as http;
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
@@ -99,8 +101,9 @@ class _DemandScreenState extends State<DemandScreen> {
   Timer? _stepTimer;
   int _routeIndex = 0;
   int _subStep = 0;
-  static const int _subSteps = 25;
-  static const Duration _stepDuration = Duration(milliseconds: 80);
+  int _subSteps = 25;
+  Duration _stepDuration = const Duration(milliseconds: 80);
+  bool _autoCenter = true;
 
   final MapController _mapController = MapController();
 
@@ -197,8 +200,8 @@ class _DemandScreenState extends State<DemandScreen> {
     super.dispose();
   }
 
-  // ── Route Generation (smooth curve) ────────
-  List<LatLng> _generateRoute(LatLng from, LatLng to) {
+  // ── Route Generation (Fallback smooth curve) ────────
+  List<LatLng> _generateRouteFallback(LatLng from, LatLng to) {
     const int segments = 14;
     final List<LatLng> points = [from];
     for (int i = 1; i <= segments; i++) {
@@ -210,6 +213,20 @@ class _DemandScreenState extends State<DemandScreen> {
     }
     points.add(to);
     return points;
+  }
+
+  // ── Fetch Real Street Route (OSRM) ───────────
+  Future<List<LatLng>> _fetchRealRoute(LatLng from, LatLng to) async {
+    try {
+      final url = 'https://router.project-osrm.org/route/v1/driving/${from.longitude},${from.latitude};${to.longitude},${to.latitude}?overview=full&geometries=geojson';
+      final response = await http.get(Uri.parse(url)).timeout(const Duration(seconds: 4));
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        final coordinates = data['routes'][0]['geometry']['coordinates'] as List;
+        return coordinates.map((c) => LatLng((c[1] as num).toDouble(), (c[0] as num).toDouble())).toList();
+      }
+    } catch (_) {}
+    return _generateRouteFallback(from, to);
   }
 
   // ── Mock Ride Generator ─────────────────────
@@ -265,9 +282,25 @@ class _DemandScreenState extends State<DemandScreen> {
   }
 
   // ── New Ride Kick-off ───────────────────────
-  void _startNewRide() {
+  Future<void> _startNewRide() async {
     final ride = _generateMockRide();
-    final route = _generateRoute(ride.pickupLatLng, ride.dropLatLng);
+    
+    // Quick mount to render UI immediately before awaiting
+    if (mounted) setState(() => currentRide = ride);
+
+    final route = await _fetchRealRoute(ride.pickupLatLng, ride.dropLatLng);
+
+    if (!mounted) return;
+
+    if (route.length > 50) {
+      // OSRM highly-dense route -> skip `subStep` interpolation or just do 2 steps quickly
+      _subSteps = 2;
+      _stepDuration = const Duration(milliseconds: 140);
+    } else {
+      // Minimal fallback route -> Smooth interpolation required
+      _subSteps = 25;
+      _stepDuration = const Duration(milliseconds: 80);
+    }
 
     setState(() {
       currentRide = ride;
@@ -330,7 +363,11 @@ class _DemandScreenState extends State<DemandScreen> {
       );
     });
 
-    try { _mapController.move(riderPosition, 14.0); } catch (_) {}
+    if (_autoCenter) {
+      try {
+        _mapController.move(riderPosition, _mapController.camera.zoom);
+      } catch (_) {}
+    }
 
     _subStep++;
     if (_subStep >= _subSteps) { _subStep = 0; _routeIndex++; }
@@ -449,15 +486,21 @@ class _DemandScreenState extends State<DemandScreen> {
             borderRadius: BorderRadius.circular(15),
             child: Stack(
               children: [
-                FlutterMap(
-                  mapController: _mapController,
+                Listener(
+                  onPointerDown: (_) {
+                    if (_autoCenter) {
+                      setState(() => _autoCenter = false);
+                    }
+                  },
+                  child: FlutterMap(
+                    mapController: _mapController,
                   options: MapOptions(
                     initialCenter: riderPosition,
                     initialZoom: 13.5,
                   ),
                   children: [
                     TileLayer(
-                      urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                      urlTemplate: 'https://mt1.google.com/vt/lyrs=m&x={x}&y={y}&z={z}',
                       userAgentPackageName: 'com.figgy.app',
                     ),
                     // Route polyline
@@ -507,8 +550,25 @@ class _DemandScreenState extends State<DemandScreen> {
                     ]),
                   ],
                 ),
-                // Zoom controls overlay (preserved from original)
+              ),
+              if (!_autoCenter)
                 Positioned(
+                  bottom: 12,
+                  right: 12,
+                  child: FloatingActionButton.small(
+                    backgroundColor: AppColors.surface,
+                    elevation: 4,
+                    child: const Icon(Icons.my_location_rounded, color: AppColors.brandPrimary),
+                    onPressed: () {
+                      setState(() => _autoCenter = true);
+                      try {
+                        _mapController.move(riderPosition, 14.5);
+                      } catch (_) {}
+                    },
+                  ),
+                ),
+              // Zoom controls overlay (preserved from original)
+              Positioned(
                   right: 8, top: 8,
                   child: Column(
                     children: [
