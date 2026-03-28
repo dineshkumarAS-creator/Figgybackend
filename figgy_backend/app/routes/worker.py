@@ -5,6 +5,9 @@ from flask import Blueprint, request, jsonify
 from app.utils.mock_generator import generate_worker_data
 from app.models import db_handler
 
+# 🔥 NEW IMPORT
+from app.utils.premium import calculate_premium
+
 # Blueprint
 worker_bp = Blueprint('worker', __name__, url_prefix='/api/worker')
 
@@ -47,11 +50,13 @@ def fetch_worker():
     except Exception as e:
         return jsonify({"status": "error", "message": f"Server Error: {str(e)}"}), 500
 
+
 @worker_bp.route('/register', methods=['POST'])
 def register_worker():
     """POST /api/worker/register - Stores in DB or In-Memory fallback."""
     try:
         body = request.get_json() or {}
+
         # Support both wrapped and flat data structures
         data = body.get("data", body) if isinstance(body.get("data"), dict) else body
         
@@ -61,8 +66,8 @@ def register_worker():
         
         if not identifier:
             return jsonify({"status": "error", "message": "Identifier required for registration"}), 400
-            
-        # Logic for income category and premiums
+
+        # 🔥 EXISTING LOGIC (keep this)
         avg_daily = data.get("avg_daily_earnings", 0)
         if avg_daily < 700:
             cat, prem = "Low", 10
@@ -70,35 +75,50 @@ def register_worker():
             cat, prem = "Medium", 20
         else:
             cat, prem = "High", 35
-            
+
+        # 🔥 NEW: Dynamic Premium Calculation
+        premium_data = calculate_premium(data)
+
         worker_id = generate_worker_id()
-        
-        # 🧪 DEEP REGISTRATION: Merge full rich mock data (KYC, Bank, Stats)
+
+        # 🧪 Merge full mock data
         full_mock_data = generate_worker_data(identifier) or {}
-        
+
         worker_doc = {
             **full_mock_data,
             "worker_id": worker_id,
             "swiggy_id": swiggy_id,
+
+            # Existing fields
             "income_category": cat,
             "suggested_premium": prem,
+
+            # 🔥 NEW FIELD
+            "premium": premium_data,
+
             "created_at": datetime.now().isoformat(),
-            # Merge screen data over mock data to respect user inputs
+
+            # Merge user input
             **{k: v for k, v in data.items() if k not in ["_id", "worker_id", "created_at"]}
         }
-        
-        # Store using unified handler
+
+        # Save to DB
         db_handler.insert_worker(worker_doc)
-        
+
         return jsonify({
             "status": "success",
             "message": "Worker registered successfully",
             "worker_id": worker_id,
+
+            # 🔥 Return premium separately also
+            "premium": premium_data,
+
             "data": worker_doc
         }), 201
-        
+
     except Exception as e:
         return jsonify({"status": "error", "message": f"Registration Error: {str(e)}"}), 500
+
 
 @worker_bp.route('/list', methods=['GET'])
 def list_workers():
