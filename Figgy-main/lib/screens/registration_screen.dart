@@ -4,6 +4,7 @@ import 'package:figgy_app/screens/main_wrapper.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
+import 'package:razorpay_flutter/razorpay_flutter.dart';
 
 class RegistrationScreen extends StatefulWidget {
   final int initialStep;
@@ -16,6 +17,7 @@ class RegistrationScreen extends StatefulWidget {
 class _RegistrationScreenState extends State<RegistrationScreen> {
   final PageController _pageController = PageController();
   int _currentStep = 0;
+  late Razorpay _razorpay;
 
   // Step 1: Language
   String _selectedLanguage = 'English';
@@ -48,7 +50,7 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
   List<dynamic> _termsSections = [];
   bool _isLoadingTerms = false;
 
-  final String _baseUrl = 'http://127.0.0.1:5000';
+  final String _baseUrl = 'http://localhost:5000'; // Updated to localhost for web requests
 
   static const Map<String, Map<String, String>> _dict = {
     'English': {
@@ -239,6 +241,11 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
   @override
   void initState() {
     super.initState();
+    _razorpay = Razorpay();
+    _razorpay.on(Razorpay.EVENT_PAYMENT_SUCCESS, _handlePaymentSuccess);
+    _razorpay.on(Razorpay.EVENT_PAYMENT_ERROR, _handlePaymentError);
+    _razorpay.on(Razorpay.EVENT_EXTERNAL_WALLET, _handleExternalWallet);
+    
     _currentStep = widget.initialStep;
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (widget.initialStep > 0) {
@@ -249,6 +256,7 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
 
   @override
   void dispose() {
+    _razorpay.clear();
     _pageController.dispose();
     _swiggyIdController.dispose();
     _nameController.dispose();
@@ -348,7 +356,130 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
     }
   }
 
+  Future<void> _initiatePayment() async {
+    if (!_isVerified || !_isUpiVerified) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Please completely verify identity and UPI first.')));
+      return;
+    }
+
+    setState(() => _isLoading = true);
+    int price = _selectedTier == 'Lite' ? 49 : (_selectedTier == 'Smart' ? 68 : 99);
+
+    try {
+      debugPrint('Initiating Payment API Call to $_baseUrl...');
+      
+      // Fallback Test Mode: Set to true if backend is constantly crashing
+      const bool fallbackPaymentMode = false;
+      if (fallbackPaymentMode) {
+        debugPrint('Fallback mode invoked. Simulating network latency...');
+        await Future.delayed(const Duration(seconds: 2));
+        _handlePaymentSuccess(PaymentSuccessResponse('pay_mock', 'order_mock', 'sig_mock'));
+        return;
+      }
+
+      final response = await http.post(
+        Uri.parse('$_baseUrl/api/payment/create_order'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({"amount": price}),
+      ).timeout(const Duration(seconds: 15));
+
+      debugPrint('Create Order Response: \${response.statusCode} - \${response.body}');
+      final responseBody = jsonDecode(response.body);
+
+      if (response.statusCode == 200 && responseBody['status'] == 'success') {
+        var options = {
+          'key': responseBody['key_id'],
+          'amount': responseBody['amount'],
+          'name': 'Figgy GigShield',
+          'description': '$_selectedTier Tier Insurance',
+          'order_id': responseBody['order_id'],
+          'prefill': {
+            'contact': _phoneController.text,
+            'email': 'gigworker@figgy.com'
+          },
+          'theme': {'color': '#0F172A'}
+        };
+
+        // Turn off spinner BEFORE opening modal to prevent infinite loading
+        // if modal fails to launch or if user closes it ungracefully.
+        if (mounted) setState(() => _isLoading = false);
+
+        debugPrint('Opening Razorpay Payment interface...');
+        try {
+          _razorpay.open(options);
+        } catch (e) {
+          throw Exception('Failed to launch checkout widget: $e');
+        }
+      } else {
+        throw Exception(responseBody['message'] ?? 'Backend failed to create order');
+      }
+    } catch (e) {
+      debugPrint('Create Order Error: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('API Error: $e'), backgroundColor: Colors.red));
+        setState(() => _isLoading = false);
+      }
+    }
+  }
+
+  Future<void> _handlePaymentSuccess(PaymentSuccessResponse response) async {
+    debugPrint('Payment Successful! Signature: \${response.signature}');
+    setState(() => _isLoading = true);
+    
+    // In fallback mode, bypass backend verification
+    const bool fallbackPaymentMode = false;
+    if (fallbackPaymentMode) {
+      await _handleRegistration();
+      if (mounted) setState(() => _isLoading = false);
+      return;
+    }
+
+    try {
+      debugPrint('Calling verification API...');
+      final verifyResponse = await http.post(
+        Uri.parse('$_baseUrl/api/payment/verify'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({
+          "razorpay_payment_id": response.paymentId,
+          "razorpay_order_id": response.orderId,
+          "razorpay_signature": response.signature,
+        }),
+      ).timeout(const Duration(seconds: 15));
+
+      final verifyBody = jsonDecode(verifyResponse.body);
+      debugPrint('Verify Response: \${verifyResponse.statusCode} - \${verifyResponse.body}');
+      
+      if (verifyResponse.statusCode == 200 && verifyBody['status'] == 'success') {
+        await _handleRegistration();
+      } else {
+        throw Exception(verifyBody['message'] ?? 'Payment verification failed at backend.');
+      }
+    } catch (e) {
+      debugPrint('Verification/Registration Error: $e');
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Finalization Error: $e'), backgroundColor: Colors.red));
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
+  }
+
+  void _handlePaymentError(PaymentFailureResponse response) {
+    debugPrint('Payment Sheet Failed or Dismissed: \${response.message}');
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Payment Canceled or Failed: \${response.message}'), backgroundColor: Colors.orange));
+      setState(() => _isLoading = false);
+    }
+  }
+
+  void _handleExternalWallet(ExternalWalletResponse response) {
+    debugPrint('External Wallet Chosen: \${response.walletName}');
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('External Wallet Flow Selected: \${response.walletName}')));
+      setState(() => _isLoading = false);
+    }
+  }
+
   Future<void> _handleRegistration() async {
+    // Note: Called only after payment success in production
     if (!_isVerified || !_isUpiVerified) {
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Please completely verify identity and UPI first.')));
       return;
@@ -978,7 +1109,7 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
                   width: double.infinity,
                   height: 52,
                   child: ElevatedButton(
-                    onPressed: (_isUpiVerified && !_isLoading) ? _handleRegistration : null,
+                    onPressed: (_isUpiVerified && !_isLoading) ? _initiatePayment : null,
                     style: ElevatedButton.styleFrom(
                       backgroundColor: AppColors.brandPrimary,
                       disabledBackgroundColor: const Color(0xFFE2E8F0),
