@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:figgy_app/theme/app_theme.dart';
-import 'package:figgy_app/screens/demand_screen.dart';
+import 'package:figgy_app/models/ride.dart';
 
 class HistoryScreen extends StatelessWidget {
   const HistoryScreen({super.key});

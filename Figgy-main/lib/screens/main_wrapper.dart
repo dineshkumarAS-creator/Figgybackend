@@ -10,16 +10,22 @@ import 'package:figgy_app/screens/profile_screen.dart';
 class MainWrapper extends StatefulWidget {
   const MainWrapper({super.key});
 
-  static _MainWrapperState? of(BuildContext context) =>
-      context.findAncestorStateOfType<_MainWrapperState>();
+  static MainWrapperState? of(BuildContext context) =>
+      context.findAncestorStateOfType<MainWrapperState>();
+
+  void refresh(BuildContext context) {
+    context.findAncestorStateOfType<MainWrapperState>()?.refreshState();
+  }
 
   @override
-  State<MainWrapper> createState() => _MainWrapperState();
+  State<MainWrapper> createState() => MainWrapperState();
 }
 
-class _MainWrapperState extends State<MainWrapper> {
+class MainWrapperState extends State<MainWrapper> {
   int _currentIndex = 0;
   bool _isLoading = true;
+  String _tier = 'Smart';
+  String _status = 'inactive';
 
   final List<GlobalKey<NavigatorState>> _navigatorKeys = [
     GlobalKey<NavigatorState>(),
@@ -28,6 +34,10 @@ class _MainWrapperState extends State<MainWrapper> {
     GlobalKey<NavigatorState>(),
     GlobalKey<NavigatorState>(),
   ];
+
+  void refreshState() {
+    _loadSavedIndex();
+  }
 
   @override
   void initState() {
@@ -39,8 +49,11 @@ class _MainWrapperState extends State<MainWrapper> {
     final prefs = await SharedPreferences.getInstance();
     setState(() {
       _currentIndex = prefs.getInt('selected_nav_index') ?? 0;
+      _tier = (prefs.getString('selected_tier') ?? 'Smart').trim();
+      _status = (prefs.getString('policy_status') ?? 'inactive').trim();
       _isLoading = false;
     });
+    debugPrint("MainWrapper Loaded: Tier=$_tier, Status=$_status");
   }
 
   Future<void> _saveIndex(int index) async {
@@ -108,6 +121,8 @@ class _MainWrapperState extends State<MainWrapper> {
   }
 
   Widget _buildBottomNav() {
+    final bool isElite = _tier.toLowerCase() == 'elite' && (_status.toLowerCase() == 'active' || _status.toLowerCase() == 'scheduled_cancel');
+    
     return Container(
       padding: const EdgeInsets.only(top: 12, bottom: 32),
       decoration: BoxDecoration(
@@ -124,37 +139,59 @@ class _MainWrapperState extends State<MainWrapper> {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceAround,
         children: [
-          _buildNavItem(Icons.home_outlined, 'Home', 0),
-          _buildNavItem(Icons.show_chart_rounded, 'Earnings', 1),
-          _buildNavItem(Icons.radar_rounded, 'Radar', 2),
-          _buildNavItem(Icons.shield_rounded, 'Insurance', 3),
-          _buildNavItem(Icons.person_outline_rounded, 'Profile', 4),
+          _buildNavItem(Icons.home_outlined, 'Home', 0, isElite),
+          _buildNavItem(Icons.show_chart_rounded, 'Earnings', 1, isElite),
+          _buildNavItem(Icons.radar_rounded, 'Radar', 2, isElite),
+          _buildNavItem(Icons.shield_rounded, 'Insurance', 3, isElite),
+          _buildNavItem(Icons.person_outline_rounded, 'Profile', 4, isElite),
         ],
       ),
     );
   }
 
-  Widget _buildNavItem(IconData icon, String label, int index) {
+  Widget _buildNavItem(IconData icon, String label, int index, bool isElite) {
     final bool isActive = _currentIndex == index;
-    final color = isActive ? AppColors.brandPrimary : AppColors.textSecondary;
+    
+    // Figgy Brand Colors for Standard, Premium Gold for Elite
+    final Color brandColor = isElite ? const Color(0xFFFACC15) : AppColors.brandPrimary;
+    final Color inactiveColor = AppColors.textSecondary;
+    
+    final color = isActive ? brandColor : inactiveColor;
 
     return GestureDetector(
       onTap: () => setIndex(index),
       behavior: HitTestBehavior.opaque,
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(icon, color: color, size: 22),
-          const SizedBox(height: 6),
-          Text(
-            label,
-            style: AppTypography.small.copyWith(
-              fontSize: 11,
-              color: color,
-              fontWeight: isActive ? FontWeight.w700 : FontWeight.w500,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Stack(
+              alignment: Alignment.center,
+              children: [
+                if (isActive)
+                  Container(
+                    width: 44,
+                    height: 28,
+                    decoration: BoxDecoration(
+                      color: brandColor.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                  ),
+                Icon(icon, color: color, size: 22),
+              ],
             ),
-          ),
-        ],
+            const SizedBox(height: 6),
+            Text(
+              label,
+              style: AppTypography.small.copyWith(
+                fontSize: 10,
+                color: color,
+                fontWeight: isActive ? FontWeight.w800 : FontWeight.w500,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

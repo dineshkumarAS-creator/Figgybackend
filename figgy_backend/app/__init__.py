@@ -1,6 +1,7 @@
 from flask import Flask, jsonify
 from flask_cors import CORS
 from app.routes.worker import worker_bp
+from app.routes.terms import terms_bp
 
 def create_app():
     """App factory function to initialize Flask application."""
@@ -14,6 +15,7 @@ def create_app():
 
     # Register Blueprints
     app.register_blueprint(worker_bp)
+    app.register_blueprint(terms_bp)
 
     # Health check endpoint
     @app.route('/health', methods=['GET'])

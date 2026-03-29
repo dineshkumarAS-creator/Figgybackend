@@ -89,3 +89,61 @@ class Database:
 
 # Singleton
 db_handler = Database()
+
+class PolicyTermsStore:
+    """Handles Terms & Conditions data with multiregional support."""
+    def __init__(self):
+        self._terms = [
+            {
+                "id": 1,
+                "version": "1.0",
+                "effective_from": "2026-03-01",
+                "language": "English",
+                "sections": [
+                    {"title": "1. Introduction", "content": "GigShield is a parametric micro-insurance product designed exclusively for food delivery partners (Zomato, Swiggy, etc.). It provides weekly protection against loss of income caused by external disruptions like heavy rain, extreme heat, or severe pollution."},
+                    {"title": "2. Coverage", "content": "We cover only loss of income due to defined parametric triggers in your registered delivery zone. Payout is fixed and automatic — no need to file a claim or prove your loss."},
+                    {"title": "3. What is NOT Covered (Exclusions)", "content": "Any health-related issues, medical expenses, accidents or vehicle damage, or loss due to personal reasons are not covered."},
+                    {"title": "4. Policy Period & Premium", "content": "Your policy is valid for 7 days (weekly cycle). Premium is charged weekly and auto-renews unless you cancel."},
+                    {"title": "5. Claim Process", "content": "Claims are fully automatic (zero-touch). When a trigger is detected, payout is processed automatically within 24–48 hours."},
+                    {"title": "6. Your Responsibilities", "content": "Keep your location and contact details updated. GPS spoofing will lead to policy cancellation."},
+                    {"title": "7. Fraud Prevention", "content": "We use AI + location validation to prevent fraudulent claims. Detected fraud will result in immediate cancellation."},
+                    {"title": "8. Cancellation & Refund", "content": "You can cancel anytime before renewal. No refund for the current active week once payment is made."},
+                    {"title": "9. Dispute Resolution", "content": "Any disputes will be subject to the laws of India and resolved through arbitration in Chennai."},
+                    {"title": "10. Important Note", "content": "This is a parametric product — payout depends only on objective weather/pollution data, not on your actual earnings loss."}
+                ],
+                "is_active": True
+            },
+            {
+                "id": 2,
+                "version": "1.0",
+                "effective_from": "2026-03-01",
+                "language": "Hindi",
+                "sections": [
+                    {"title": "1. परिचय", "content": "GigShield एक पैरामीट्रिक माइक्रो-इंश्योरेंस उत्पाद है जो विशेष रूप से फूड डिलीवरी पार्टनर्स के लिए बनाया गया है।"},
+                    {"title": "2. कवरेज", "content": "हम केवल आपके पंजीकृत डिलीवरी क्षेत्र में परिभाषित पैरामीट्रिक ट्रिगर्स के कारण आय की हानि को कवर करते हैं।"},
+                    {"title": "3. क्या कवर नहीं है (अपवाद)", "content": "स्वास्थ्य संबंधी समस्याएं, चिकित्सा व्यय, दुर्घटनाएं या वाहन की मरम्मत कवर नहीं है।"},
+                    {"title": "4. पॉलिसी अवधि और प्रीमियम", "content": "आपकी पॉलिसी 7 दिनों (साप्ताहिक चक्र) के लिए वैध है। प्रीमियम साप्ताहिक रूप से लिया जाता है।"},
+                    {"title": "5. दावा प्रक्रिया", "content": "दावे पूरी तरह से स्वचालित (जीरो-टच) हैं।"},
+                    {"title": "6. आपकी जिम्मेदारियां", "content": "अपनी लोकेशन और संपर्क विवरण अपडेट रखें।"},
+                    {"title": "7. धोखाधड़ी रोकथाम", "content": "धोखाधड़ी के परिणामस्वरूप पॉलिसी तुरंत रद्द कर दी जाएगी।"},
+                    {"title": "8. रद्दीकरण और धनवापसी", "content": "आप नवीनीकरण से पहले किसी भी समय रद्द कर सकते हैं।"},
+                    {"title": "9. विवाद समाधान", "content": "कोई भी विवाद भारत के कानूनों के अधीन होगा।"},
+                    {"title": "10. महत्वपूर्ण नोट", "content": "यह एक पैरामीट्रिक उत्पाद है - भुगतान केवल वस्तुनिष्ठ मौसम/प्रदूषण डेटा पर निर्भर करता है।"}
+                ],
+                "is_active": True
+            }
+        ]
+
+    def get_terms(self, language="English", version="1.0"):
+        """Fetch active terms for a given language and version."""
+        for t in self._terms:
+            if t["language"] == language and t["version"] == version and t["is_active"]:
+                return t
+        # Fallback to English 1.0
+        return self._terms[0]
+
+    def get_current_version(self):
+        return "1.0"
+
+# Terms Storage Singleton
+terms_store = PolicyTermsStore()

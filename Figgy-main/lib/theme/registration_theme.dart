@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 class AppColors {
-  // Brand Colors
+  // Brand Colors - Reverted to OG Figgy Orange
   static const Color brandPrimary = Color(0xFFFF6A2A); // Figgy Orange
   static const Color brandDeepBlue = Color(0xFF111827); // Premium Fintech Blue
   static const Color brandAccent = Color(0xFFFF7A00);
@@ -33,83 +33,71 @@ class AppColors {
   static const Color border = Color(0xFFE5E7EB);
 }
 
-/// Spacing system constants — use these everywhere instead of ad-hoc values.
 class AppSpacing {
-  static const double micro = 8.0;    // micro spacing
-  static const double small = 12.0;   // small spacing
-  static const double standard = 16.0; // standard spacing
-  static const double section = 24.0; // section spacing
+  static const double micro = 6.0;    
+  static const double small = 12.0;   
+  static const double standard = 16.0; 
+  static const double section = 24.0; 
 }
 
 class AppTypography {
-  // H1 — 26px bold, tight line-height
-  static TextStyle get h1 => GoogleFonts.outfit(
-        fontSize: 26,
+  // Scaled down font sizes to prevent the UI from being too big
+  static TextStyle get h1 => GoogleFonts.inter(
+        fontSize: 22,
         fontWeight: FontWeight.w700,
         color: AppColors.textPrimary,
         letterSpacing: -0.3,
-        height: 1.2,
       );
 
-  // H2 — 20px bold
-  static TextStyle get h2 => GoogleFonts.outfit(
-        fontSize: 20,
+  static TextStyle get h2 => GoogleFonts.inter(
+        fontSize: 18,
         fontWeight: FontWeight.w700,
         color: AppColors.textPrimary,
-        height: 1.2,
+        letterSpacing: -0.2,
       );
 
-  // H3 — 18px semi-bold
-  static TextStyle get h3 => GoogleFonts.outfit(
-        fontSize: 18,
+  static TextStyle get h3 => GoogleFonts.inter(
+        fontSize: 16,
         fontWeight: FontWeight.w600,
         color: AppColors.textPrimary,
-        height: 1.2,
       );
 
-  // Body Large — 16px medium
-  static TextStyle get bodyLarge => GoogleFonts.outfit(
-        fontSize: 16,
-        fontWeight: FontWeight.w500,
-        color: AppColors.textPrimary,
-        height: 1.4,
-      );
-
-  // Body Medium — 14px medium (primary body text)
-  static TextStyle get bodyMedium => GoogleFonts.outfit(
+  static TextStyle get bodyLarge => GoogleFonts.inter(
         fontSize: 14,
         fontWeight: FontWeight.w500,
-        color: AppColors.textSecondary,
-        height: 1.4,
+        color: AppColors.textPrimary,
       );
 
-  // Body Small — 13px regular
-  static TextStyle get bodySmall => GoogleFonts.outfit(
+  static TextStyle get bodyMedium => GoogleFonts.inter(
         fontSize: 13,
         fontWeight: FontWeight.w400,
         color: AppColors.textSecondary,
-        height: 1.4,
       );
 
-  // Caption / Label — 12px semi-bold uppercase
-  static TextStyle get small => GoogleFonts.outfit(
+  static TextStyle get bodySmall => GoogleFonts.inter(
         fontSize: 12,
+        fontWeight: FontWeight.w400,
+        color: AppColors.textSecondary,
+      );
+
+  static TextStyle get small => GoogleFonts.inter(
+        fontSize: 11,
         fontWeight: FontWeight.w600,
         color: AppColors.textMuted,
-        letterSpacing: 0.3,
+        letterSpacing: 0.2,
       );
 }
 
 class AppStyles {
   static const double gridUnit = 8.0;
-  static const double borderRadius = 12.0;
-  static const double cardRadius = 16.0;
-  static const double cardPadding = 20.0;
+  static const double borderRadius = 10.0; 
+  static const double cardRadius = 14.0;   
+  static const double cardPadding = 16.0;  
 
   static List<BoxShadow> get softShadow => [
         BoxShadow(
           color: Colors.black.withOpacity(0.04),
-          blurRadius: 8,
+          blurRadius: 10,
           offset: const Offset(0, 3),
         ),
       ];
@@ -118,7 +106,7 @@ class AppStyles {
         BoxShadow(
           color: AppColors.brandPrimary.withOpacity(0.12),
           blurRadius: 16,
-          offset: const Offset(0, 8),
+          offset: const Offset(0, 6),
         ),
       ];
 }

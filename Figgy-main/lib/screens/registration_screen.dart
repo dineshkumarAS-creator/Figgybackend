@@ -1,12 +1,13 @@
 import 'package:flutter/material.dart';
-import 'package:figgy_app/theme/app_theme.dart';
+import 'package:figgy_app/theme/registration_theme.dart';
 import 'package:figgy_app/screens/main_wrapper.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 
 class RegistrationScreen extends StatefulWidget {
-  const RegistrationScreen({super.key});
+  final int initialStep;
+  const RegistrationScreen({super.key, this.initialStep = 0});
 
   @override
   State<RegistrationScreen> createState() => _RegistrationScreenState();
@@ -40,7 +41,12 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
   bool _isUpiVerified = false;
 
   // Step 3: Tiers
-  String _selectedTier = 'Smart'; // 'Lite', 'Smart', 'Pro'
+  String _selectedTier = 'Smart'; // 'Lite', 'Smart', 'Elite'
+
+  // Step 4: Terms
+  bool _termsAgreed = false;
+  List<dynamic> _termsSections = [];
+  bool _isLoadingTerms = false;
 
   final String _baseUrl = 'http://127.0.0.1:5000';
 
@@ -74,6 +80,26 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
       'ai_rec2': 'zone weather forecast.',
       'one_tap': 'ONE-TAP ACTIVATE',
       'hr': 'hrs',
+      'terms_title': 'Terms & Conditions',
+      'terms_sub': 'GigShield Weekly Insurance',
+      'terms_intro': 'This is a parametric insurance that provides income protection during extreme conditions.',
+      'agree_terms': 'I agree to the Terms & Conditions',
+      'pay_activate': 'Pay & Activate',
+      'download_pdf': 'Download PDF',
+      'trust_note': 'Powered by verified weather & data sources',
+      'continue_terms': 'CONTINUE TO TERMS',
+      'i_agree': 'I agree',
+      'activate_policy': 'Activate Policy',
+      'final_step': 'Final Step',
+      'payout_info': 'Setup Payout Method',
+      'enter_upi': 'Enter your UPI ID to activate the policy',
+      'secure_activation': 'Secure Activation',
+      'activate_now': 'ACTIVATE NOW',
+      'success_title': 'Policy Activated!',
+      'success_sub': 'Your coverage is now live.',
+      'terms_full_header': 'GIGSHIELD PARAMETRIC INSURANCE TERMS AND CONDITIONS',
+      'effective_date': 'Effective Date: March 2026',
+      'version_txt': 'Version: 1.0',
     },
     'Hindi': {
       'title': 'कार्यकर्ता पंजीकरण',
@@ -96,7 +122,7 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
       'deliv': 'साप्ताहिक डिलीवरी',
       'earn': 'साप्ताहिक कमाई',
       'pay_claim': 'भुगतान और दावे',
-      'upi_id': 'यूपीआई आईडी (तत्काल भुगतान के लिए)',
+      'upi_id': 'यूपीआई आईडी',
       'linked': 'लिंक किया गया',
       'test_1': 'टेस्ट ₹1',
       'continue_plans': 'प्लान पर जारी रखें',
@@ -104,6 +130,25 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
       'ai_rec2': 'क्षेत्र के मौसम के आधार पर स्मार्ट टियर की सिफारिश करता है।',
       'one_tap': 'वन-टैप चालू करें',
       'hr': 'घंटे',
+      'terms_title': 'नियम और शर्तें',
+      'terms_sub': 'GigShield साप्ताहिक बीमा',
+      'agree_terms': 'मैं नियमों और शर्तों से सहमत हूँ',
+      'pay_activate': 'भुगतान करें और सक्रिय करें',
+      'download_pdf': 'पीडीएफ डाउनलोड करें',
+      'trust_note': 'सत्यापित मौसम और डेटा स्रोतों द्वारा संचालित',
+      'continue_terms': 'शर्तों पर जारी रखें',
+      'i_agree': 'मैं सहमत हूँ',
+      'activate_policy': 'बीमा सक्रिय करें',
+      'final_step': 'अंतिम चरण',
+      'payout_info': 'पेआउट विधि सेटअप करें',
+      'enter_upi': 'पॉलिसी सक्रिय करने के लिए अपना यूपीआई आईडी दर्ज करें',
+      'secure_activation': 'सुरक्षित सक्रियण',
+      'activate_now': 'अभी सक्रिय करें',
+      'success_title': 'बीमा सक्रिय हो गया!',
+      'success_sub': 'आपका कवरेज अब लाइव है।',
+      'terms_full_header': 'GIGSHIELD पैरामेट्रिक बीमा नियम और शर्तें',
+      'effective_date': 'प्रभावी तिथि: मार्च 2026',
+      'version_txt': 'संस्करण: 1.0',
     },
     'Marathi': {
       'title': 'कामगार नोंदणी',
@@ -134,6 +179,14 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
       'ai_rec2': 'हवामानाच्या अंदाजानुसार स्मार्ट टियर सुचवतो.',
       'one_tap': 'वन-टॅप सक्रिय करा',
       'hr': 'तास',
+      'terms_title': 'नियम आणि अटी',
+      'terms_sub': 'GigShield साप्ताहिक विमा',
+      'terms_intro': 'हे एक पॅरामीट्रिक विमा आहे जो विषम परिस्थितीत उत्पन्न संरक्षण प्रदान करतो.',
+      'agree_terms': 'मी नियम आणि अटींशी सहमत आहे',
+      'pay_activate': 'देय द्या आणि सक्रिय करा',
+      'download_pdf': 'पीडीएफ डाउनलोड करा',
+      'trust_note': 'सत्यापित हवामान आणि डेटा स्रोतांद्वारे समर्थित',
+      'continue_terms': 'अटींवर पुढे जा',
     },
     'Tamil': {
       'title': 'பணியாளர் பதிவு',
@@ -164,6 +217,14 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
       'ai_rec2': 'பகுதியின் அடிப்படையில் AI ஸ்மார்ட் அடுக்கை பரிந்துரைக்கிறது.',
       'one_tap': 'செயல்படுத்து',
       'hr': 'மணி',
+      'terms_title': 'விதிமுறைகள் மற்றும் நிபந்தனைகள்',
+      'terms_sub': 'GigShield வாராந்திர காப்பீடு',
+      'terms_intro': 'இது ஒரு பாராமெட்ரிக் காப்பீடு ஆகும், இது மோசமான சூழ்நிலைகளில் வருமானப் பாதுகாப்பை வழங்குகிறது.',
+      'agree_terms': 'விதிமுறைகள் மற்றும் நிபந்தனைகளை நான் ஒப்புக்கொள்கிறேன்',
+      'pay_activate': 'பணம் செலுத்தி செயல்படுத்தவும்',
+      'download_pdf': 'PDF பதிவிறக்கம்',
+      'trust_note': 'சரிபார்க்கப்பட்ட வானிலை மற்றும் தரவு ஆதாரங்கள் மூலம் இயக்கப்படுகிறது',
+      'continue_terms': 'விதிமுறைகளுக்குத் தொடரவும்',
     },
   };
 
@@ -173,6 +234,17 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
 
   String _tEn(String key) {
     return _dict['English']![key]!;
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    _currentStep = widget.initialStep;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (widget.initialStep > 0) {
+        _pageController.jumpToPage(widget.initialStep);
+      }
+    });
   }
 
   @override
@@ -188,9 +260,13 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
   }
 
   void _nextStep() {
-    if (_currentStep < 2) {
+    if (_currentStep < 4) { // Step 0 to 4 (5 total)
       if (_currentStep == 1 && (!_isVerifying && !_isVerified)) {
         ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Please verify your Swiggy ID before continuing.')));
+        return;
+      }
+      if (_currentStep == 2) {
+        _showTermsBottomSheet();
         return;
       }
       setState(() => _currentStep++);
@@ -252,6 +328,26 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
     }
   }
 
+  Future<void> _fetchTerms() async {
+    setState(() => _isLoadingTerms = true);
+    try {
+      final response = await http.get(
+        Uri.parse('$_baseUrl/api/terms/current?language=$_selectedLanguage'),
+      );
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body)['data'];
+        setState(() {
+          _termsSections = data['sections'];
+        });
+      }
+    } catch (e) {
+      debugPrint('Error fetching terms: $e');
+      // Fallback handled in UI
+    } finally {
+      setState(() => _isLoadingTerms = false);
+    }
+  }
+
   Future<void> _handleRegistration() async {
     if (!_isVerified || !_isUpiVerified) {
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Please completely verify identity and UPI first.')));
@@ -283,7 +379,9 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
         final prefs = await SharedPreferences.getInstance();
         await prefs.setBool('has_onboarded', true);
         await prefs.setString('worker_id', responseBody['worker_id'] ?? '');
-
+        await prefs.setString('selected_tier', _selectedTier);
+        await prefs.setString('policy_status', 'active');
+        debugPrint("Registration Success: Saved tier=$_selectedTier, status=active");
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Worker Registered Successfully! Coverage Active.'), backgroundColor: Colors.green));
           Navigator.pushAndRemoveUntil(context, MaterialPageRoute(builder: (_) => const MainWrapper()), (route) => false);
@@ -310,7 +408,7 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
           icon: const Icon(Icons.arrow_back_ios_new_rounded, color: AppColors.textPrimary, size: 20),
           onPressed: _prevStep,
         ),
-        title: Text('${_tEn('title')} (${_currentStep + 1}/3)', style: AppTypography.small.copyWith(letterSpacing: 1.0, color: AppColors.textSecondary)),
+        title: Text('${_tEn('title')} (${_currentStep + 1}/4)', style: AppTypography.small.copyWith(letterSpacing: 1.0, color: AppColors.textSecondary)),
         actions: [
           Padding(
             padding: const EdgeInsets.only(right: 16.0),
@@ -332,6 +430,7 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
               _buildStep1(hp),
               _buildStep2(hp),
               _buildStep3(hp),
+              _buildStep5(hp), // New Step 5 (UPI Activation)
             ],
           );
         },
@@ -515,42 +614,6 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
                 ),
 
                 const SizedBox(height: 32),
-                const Divider(color: AppColors.border),
-                const SizedBox(height: 24),
-
-                Text(_t('pay_claim'), style: AppTypography.h3),
-                const SizedBox(height: 16),
-                _buildLabel('upi_id'),
-                Row(
-                  children: [
-                    Expanded(
-                      child: _buildTextField(
-                        controller: _upiController,
-                        icon: Icons.account_balance_wallet_outlined,
-                        hint: 'mobile@upi',
-                        onChanged: (val) => setState(() => _isUpiVerified = false),
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    SizedBox(
-                      height: 54,
-                      child: ElevatedButton(
-                        onPressed: _isUpiVerifying ? null : _verifyUpi,
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: _isUpiVerified ? Colors.green : AppColors.brandPrimary.withOpacity(0.1),
-                          foregroundColor: _isUpiVerified ? Colors.white : AppColors.brandPrimary,
-                          elevation: 0,
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                        ),
-                        child: _isUpiVerifying 
-                          ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.brandPrimary))
-                          : Text(_isUpiVerified ? _t('linked') : _t('test_1')),
-                      ),
-                    ),
-                  ],
-                ),
-                
-                const SizedBox(height: 48),
                 SizedBox(
                   width: double.infinity, height: 60,
                   child: ElevatedButton(
@@ -574,7 +637,7 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
 
   // ─── STEP 3: TIER CHECKOUT ──────────────────────────────────────────────
   Widget _buildStep3(double horizontalPadding) {
-    int price = _selectedTier == 'Lite' ? 49 : (_selectedTier == 'Smart' ? 68 : 99);
+    int price = _selectedTier == 'Lite' ? 49 : (_selectedTier == 'Smart' ? 68 : 99); // Elite is 99
     
     return SingleChildScrollView(
       padding: EdgeInsets.symmetric(horizontal: horizontalPadding, vertical: 32),
@@ -597,19 +660,17 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
           const SizedBox(height: 16),
           _buildTierCard('Smart', 68, 'Rain, Heat & AQI', 'Max ₹1,200/day', 'Comprehensive AI-optimized defaults. Recommended.', isRecommended: true),
           const SizedBox(height: 16),
-          _buildTierCard('Pro', 99, 'All + Micro Triggers', 'Max ₹1,500/day', 'Max payout coverage with weekly bonuses.'),
+          _buildTierCard('Elite', 99, 'All + Micro Triggers', 'Max ₹1,500/day', 'Max payout coverage with weekly bonuses.'),
           
           const SizedBox(height: 48),
           SizedBox(
             width: double.infinity, height: 60,
             child: ElevatedButton(
-              onPressed: _isLoading ? null : _handleRegistration,
-              style: ElevatedButton.styleFrom(backgroundColor: Colors.green, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)), elevation: 0),
-              child: _isLoading 
-                ? const SizedBox(height: 24, width: 24, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 3))
-                : Row(mainAxisAlignment: MainAxisAlignment.center, children: [
-                    Text('${_t('one_tap')} (₹$price)', style: AppTypography.bodyLarge.copyWith(color: Colors.white, fontWeight: FontWeight.w900, letterSpacing: 1.0)),
-                    const SizedBox(width: 12), const Icon(Icons.verified_user_rounded, size: 20, color: Colors.white),
+              onPressed: _nextStep,
+              style: ElevatedButton.styleFrom(backgroundColor: AppColors.brandPrimary, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)), elevation: 0),
+              child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+                    Text(_t('continue_terms'), style: AppTypography.bodyLarge.copyWith(color: Colors.white, fontWeight: FontWeight.w900, letterSpacing: 1.0)),
+                    const SizedBox(width: 12), const Icon(Icons.arrow_forward_rounded, size: 20, color: Colors.white),
                   ]),
             ),
           ),
@@ -678,6 +739,326 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
     );
   }
 
+  void _showTermsBottomSheet() {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => Container(
+        height: MediaQuery.of(context).size.height * 0.9,
+        decoration: const BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(30)),
+        ),
+        child: Stack(
+          children: [
+            Column(
+              children: [
+                const SizedBox(height: 16),
+                Center(child: Container(width: 40, height: 5, decoration: BoxDecoration(color: Colors.grey.shade300, borderRadius: BorderRadius.circular(5)))),
+                const SizedBox(height: 24),
+                
+                // Header
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 24.0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(_t('terms_full_header'), style: AppTypography.h3.copyWith(fontWeight: FontWeight.w800, fontSize: 18)),
+                      const SizedBox(height: 8),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(_t('effective_date'), style: AppTypography.small.copyWith(fontWeight: FontWeight.bold)),
+                          Text(_t('version_txt'), style: AppTypography.small.copyWith(fontWeight: FontWeight.bold)),
+                        ],
+                      ),
+                      const SizedBox(height: 16),
+                      const Divider(),
+                    ],
+                  ),
+                ),
+                
+                // Content
+                Expanded(
+                  child: ListView(
+                    padding: const EdgeInsets.all(24),
+                    children: _buildTermsWidgetList(),
+                  ),
+                ),
+                
+                // Footer Action
+                Container(
+                  padding: const EdgeInsets.all(24),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10, offset: const Offset(0, -5))],
+                  ),
+                  child: SizedBox(
+                    width: double.infinity,
+                    height: 56,
+                    child: ElevatedButton(
+                      onPressed: () {
+                        Navigator.pop(context);
+                        setState(() => _currentStep = 3); // Target Step 4 (Index 3)
+                        _pageController.animateToPage(3, duration: const Duration(milliseconds: 300), curve: Curves.easeInOut);
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFF22C55E),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
+                        elevation: 0,
+                      ),
+                      child: Text(_t('i_agree'), style: AppTypography.bodyLarge.copyWith(color: Colors.white, fontWeight: FontWeight.w900)),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            
+            Positioned(
+              top: 24,
+              right: 16,
+              child: IconButton(
+                icon: const Icon(Icons.close_rounded, color: AppColors.textSecondary),
+                onPressed: () => Navigator.pop(context),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  List<Widget> _buildTermsWidgetList() {
+    final List<Map<String, dynamic>> content = [
+      {"type": "section", "title": "1. DEFINITIONS AND INTERPRETATION", "items": [
+        "1.1 “GigShield” refers to the digital platform, inclusive of its mobile application and associated backend infrastructure, providing parametric insurance-linked services to registered independent contractors.",
+        "1.2 “Policyholder” refers to the individual registered user who has successfully completed the onboarding process and whose premium payment has been confirmed for the active Coverage Period.",
+        "1.3 “Policy” or “Certificate of Insurance” refers to the specific weekly parametric coverage terms and conditions outlined herein, which constitute the entire agreement between the Service Provider and the Policyholder.",
+        "1.4 “Parametric Trigger” refers to the specific, predefined environmental and meteorological thresholds (including but not limited to rainfall volume, ambient temperature, and air quality index) which, when verified by independent data sources, initiate an automated payout process without further intervention.",
+        "1.5 “Coverage Period” refers to the specific duration of seven (7) consecutive calendar days, commencing precisely at the time of policy activation following verified premium receipt."
+      ]},
+      {"type": "section", "title": "2. NATURE OF THE PARAMETRIC PRODUCT", "items": [
+        "2.1 GigShield is strictly a parametric financial protection product designed specifically to mitigate the risk of lost earnings due to severe external environmental factors. It operates on a fixed-payout model based on objective data triggers.",
+        "2.2 Unlike traditional indemnity insurance, this Policy does not necessitate proof of actual financial loss or property damage. Eligibility for payment is determined solely by the occurrence of a verified Parametric Trigger within the Policyholder's registered primary working zone.",
+        "2.3 This product is explicitly intended for income protection for gig economy workers and does not substitute for, nor constitute, health, life, personal accident, or motor vehicle insurance as defined under standard insurance regulations."
+      ]},
+      {"type": "section", "title": "3. ELIGIBILITY AND ACCOUNT REQUIREMENTS", "items": [
+        "3.1 This service is available exclusively to individuals actively engaged as delivery partners with registered platform aggregators. Unauthorized use or registration by individuals not meeting these criteria will result in immediate termination of coverage without refund.",
+        "3.2 To maintain eligibility, Policyholders must ensure that all registered personal details, active working zones, and UPI payout information remain accurate and up-to-date throughout the Coverage Period.",
+        "3.3 GigShield and its underwriters reserve the absolute right to verify work activity and platform engagement through secure data integrations to prevent fraudulent claims and ensure equitable distribution of benefits."
+      ]},
+      {"type": "section", "title": "4. COVERAGE PARAMETERS AND TRIGGERS", "items": [
+        "4.1 Financial benefits under this Policy are only applicable when an official Parametric Trigger is recorded within the Policyholder's defined primary working zone during active hours of the Coverage Period.",
+        "4.2 Specific trigger thresholds are established as follows: (a) Precipitation exceeding 50mm within a 24-hour cycle, (b) Ambient temperatures reaching or exceeding 43°C for at least 3 consecutive hours, or (c) Air Quality Index (AQI) readings sustained above 350 for more than 4 hours.",
+        "4.3 All environmental data utilized for trigger verification is sourced from reputable third-party meteorlogical and atmospheric data providers. The decisions rendered by the automated GigShield trigger engine are final and binding.",
+        "4.4 Payout amounts are predetermined based on the selected Policy Tier (Lite, Smart, or Elite) and range between a minimum of ₹600 and a maximum of ₹1,500 per triggered event."
+      ]},
+      {"type": "section", "title": "5. EXCLUSIONS AND LIMITATIONS", "items": [
+        "5.1 This Policy explicitly excludes coverage for (a) personal medical conditions, illnesses, or pre-existing health issues; (b) accidental bodily injury, permanent disability, or death; (c) physical damage to vehicles, smartphones, or personal property; (d) voluntary cessations of work unrelated to parametric conditions; and (e) platform-specific outages or account suspensions.",
+        "5.2 The maximum payout per Coverage Period is capped based on the tier limits and cannot exceed the total cumulative payout threshold regardless of the number of environmental triggers occurred."
+      ]},
+       {"type": "section", "title": "6. TERMINATION AND RENEWAL", "items": [
+        "6.1 Coverage automatically expires at the conclusion of the seven-day period. Policyholders may opt for automatic renewal to ensure uninterrupted protection.",
+        "6.2 Premium payments are non-refundable once the Coverage Period has commenced, except in cases where technical errors prevented the activation of the service."
+      ]},
+       {"type": "section", "title": "7. CLAIM SETTLEMENT AND PAYOUT PROCESS", "items": [
+        "7.1 GigShield utilizes a 'zero-touch' claims architecture. There is no requirement for the Policyholder to file a manual claim form or submit documentation following an environmental trigger.",
+        "7.2 Payouts are initiated automatically upon the confirmation of a Parametric Trigger by our data node network.",
+        "7.3 Funds will be disbursed directly to the registered UPI ID of the Policyholder within 24–48 hours of trigger verification, subject to banking system availability."
+      ]},
+    ];
+
+    return content.expand<Widget>((sec) => [
+      Text(sec['title'], style: AppTypography.bodyLarge.copyWith(fontWeight: FontWeight.w900, fontSize: 13, color: AppColors.textPrimary)),
+      const SizedBox(height: 12),
+      ...(sec['items'] as List).cast<String>().map((item) => Padding(
+        padding: const EdgeInsets.only(bottom: 16.0),
+        child: Text(
+          item,
+          style: AppTypography.bodySmall.copyWith(height: 1.6, color: AppColors.textPrimary),
+          textAlign: TextAlign.justify,
+        ),
+      )),
+      const SizedBox(height: 24),
+    ]).toList();
+  }
+
+  // ─── STEP 5: FINAL UPI ACTIVATION ─────────────────────────────────────────
+  Widget _buildStep5(double hp) {
+    int price = _selectedTier == 'Lite' ? 49 : (_selectedTier == 'Smart' ? 68 : 99); // Elite is 99
+    
+    return SingleChildScrollView(
+      padding: EdgeInsets.symmetric(horizontal: hp, vertical: 32),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Icon(Icons.verified_rounded, color: Colors.green, size: 28),
+              const SizedBox(width: 12),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(_t('final_step'), style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500, color: Color(0xFF94A3B8))),
+                  Text(_t('activate_policy'), style: const TextStyle(fontSize: 26, fontWeight: FontWeight.w600, color: Color(0xFF0F172A), letterSpacing: -0.2)),
+                ],
+              ),
+            ],
+          ),
+          const SizedBox(height: 32),
+          
+          Container(
+            padding: const EdgeInsets.all(24),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: const Color(0xFFE2E8F0)),
+              boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 20, offset: const Offset(0, 4))],
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(_selectedTier, style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600, color: AppColors.brandPrimary)),
+                    Text('₹$price', style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Color(0xFF0F172A))),
+                  ],
+                ),
+                const SizedBox(height: 8),
+                Text(_t('terms_sub'), style: const TextStyle(fontSize: 13, color: Color(0xFF94A3B8))),
+                const Divider(height: 48, color: Color(0xFFE2E8F0)),
+                RichText(
+                  text: TextSpan(
+                    style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w400, color: Color(0xFF475569), height: 1.5, fontFamily: 'Inter'),
+                    children: [
+                      const TextSpan(text: 'You will be charged '),
+                      TextSpan(text: '₹$price', style: const TextStyle(fontWeight: FontWeight.w600, color: Color(0xFF0F172A))),
+                      const TextSpan(text: ' via your saved UPI now. Coverage will start '),
+                      const TextSpan(text: 'immediately', style: TextStyle(fontWeight: FontWeight.w600, color: Color(0xFF0F172A))),
+                      const TextSpan(text: ' after successful payment.'),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 24),
+                const Text("UPI ID", style: TextStyle(fontSize: 13, fontWeight: FontWeight.w500, color: Color(0xFF64748B))),
+                const SizedBox(height: 20),
+                
+                Row(
+                  children: [
+                    Expanded(
+                      child: _buildTextField(
+                        controller: _upiController,
+                        icon: Icons.account_balance_wallet_outlined,
+                        hint: 'mobile@upi',
+                        onChanged: (val) => setState(() => _isUpiVerified = false),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    SizedBox(
+                      height: 54,
+                      child: ElevatedButton(
+                        onPressed: _isUpiVerifying ? null : _verifyUpi,
+                        style: OutlinedButton.styleFrom(
+                          side: BorderSide(color: _isUpiVerified ? Colors.green : AppColors.brandPrimary.withOpacity(0.5)),
+                          foregroundColor: _isUpiVerified ? Colors.green : AppColors.brandPrimary,
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        ),
+                        child: _isUpiVerifying 
+                          ? SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.brandPrimary))
+                          : Text(_isUpiVerified ? _t('linked') : _t('test_1'), style: const TextStyle(fontWeight: FontWeight.w600)),
+                      ),
+                    ),
+                  ],
+                ),
+                
+                const SizedBox(height: 40),
+                SizedBox(
+                  width: double.infinity,
+                  height: 52,
+                  child: ElevatedButton(
+                    onPressed: (_isUpiVerified && !_isLoading) ? _handleRegistration : null,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.brandPrimary,
+                      disabledBackgroundColor: const Color(0xFFE2E8F0),
+                      disabledForegroundColor: const Color(0xFF94A3B8),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                      elevation: 0,
+                    ),
+                    child: _isLoading 
+                      ? const SizedBox(height: 24, width: 24, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 3))
+                      : Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            const Icon(Icons.shield_rounded, size: 18, color: Colors.white),
+                            const SizedBox(width: 8),
+                            Expanded(child: Text('Pay ₹$price & Activate Now', style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: Colors.white, letterSpacing: 0.3), textAlign: TextAlign.center, overflow: TextOverflow.ellipsis, maxLines: 1)),
+                          ],
+                        ),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                Center(
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      const Icon(Icons.lock_outline_rounded, size: 16, color: Color(0xFF64748B)),
+                      const SizedBox(width: 6),
+                      const Text("Secure Activation", style: TextStyle(fontSize: 13, color: Color(0xFF64748B), fontWeight: FontWeight.w500)),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 40),
+          _buildFooter(),
+        ],
+      ),
+    );
+  }
+
+  // Original fallback T&C structure for legacy ref
+  List<Widget> _buildAccordionList() {
+    return _termsSections.map((s) => _buildAccordion(s['title'], s['content'])).toList();
+  }
+
+  Widget _buildAccordion(String title, String content) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: AppColors.border.withOpacity(0.5)),
+      ),
+      child: Theme(
+        data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
+        child: ExpansionTile(
+          title: Text(title, style: AppTypography.bodyMedium.copyWith(fontWeight: FontWeight.bold, color: AppColors.textPrimary)),
+          iconColor: AppColors.brandPrimary,
+          collapsedIconColor: AppColors.textMuted,
+          childrenPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          children: [
+            Text(
+              content,
+              style: AppTypography.bodySmall.copyWith(height: 1.6, color: AppColors.textSecondary),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  List<Widget> _buildFallbackTerms() {
+    final List<Map<String, String>> fallback = [
+      {"title": "1. Introduction", "content": "GigShield is a parametric micro-insurance product for delivery partners."},
+      {"title": "2. Coverage", "content": "Covers loss of income due to weather triggers."},
+      {"title": "3. Claims", "content": "Automatic payout, no manual claim filing needed."},
+    ];
+    return fallback.map((s) => _buildAccordion(s['title']!, s['content']!)).toList();
+  }
+
   // ─── REUSABLE WIDGETS ───────────────────────────────────────────────────
   Widget _buildHeroCard() {
     return Container(
@@ -716,15 +1097,16 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
   }
 
   Widget _buildTextField({required String hint, IconData? icon, TextEditingController? controller, TextInputType keyboardType = TextInputType.text, Function(String)? onChanged}) {
-    return Container(
-      decoration: BoxDecoration(color: const Color(0xFFF9FAFB), borderRadius: BorderRadius.circular(8), border: Border.all(color: AppColors.border)),
-      child: TextField(
-        controller: controller, onChanged: onChanged, keyboardType: keyboardType, style: AppTypography.bodyLarge,
-        decoration: InputDecoration(
-          prefixIcon: icon != null ? Icon(icon, color: AppColors.textMuted, size: 20) : null,
-          hintText: hint, hintStyle: AppTypography.bodyMedium.copyWith(color: AppColors.textMuted),
-          border: InputBorder.none, contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-        ),
+    return TextFormField(
+      controller: controller, onChanged: onChanged, keyboardType: keyboardType, style: AppTypography.bodyLarge,
+      decoration: InputDecoration(
+        filled: true,
+        fillColor: AppColors.background,
+        prefixIcon: icon != null ? Icon(icon, color: AppColors.textMuted, size: 20) : null,
+        hintText: hint, hintStyle: AppTypography.bodyMedium.copyWith(color: AppColors.textMuted),
+        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+        enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: AppColors.border)),
+        focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: AppColors.brandPrimary, width: 2.0)),
       ),
     );
   }

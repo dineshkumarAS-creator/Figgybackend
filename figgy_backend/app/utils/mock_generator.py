@@ -81,8 +81,8 @@ def generate_worker_data(identifier: str) -> Dict[str, Any]:
     if identifier in IMMUTABLE_PROFILES:
         return IMMUTABLE_PROFILES[identifier]
         
-    if identifier not in VALID_SWIGGY_IDS:
-        return None
+    # if identifier not in VALID_SWIGGY_IDS:
+    #     return None
         
     seed_hash = int(hashlib.md5(identifier.encode()).hexdigest(), 16)
     random.seed(seed_hash)

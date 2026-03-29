@@ -3,7 +3,7 @@ import string
 from datetime import datetime
 from flask import Blueprint, request, jsonify
 from app.utils.mock_generator import generate_worker_data
-from app.models import db_handler
+from app.models import db_handler, terms_store
 
 # Blueprint
 worker_bp = Blueprint('worker', __name__, url_prefix='/api/worker')
@@ -82,6 +82,8 @@ def register_worker():
             "swiggy_id": swiggy_id,
             "income_category": cat,
             "suggested_premium": prem,
+            "terms_version": terms_store.get_current_version(),
+            "policy_status": "active",
             "created_at": datetime.now().isoformat(),
             # Merge screen data over mock data to respect user inputs
             **{k: v for k, v in data.items() if k not in ["_id", "worker_id", "created_at"]}
@@ -112,3 +114,41 @@ def list_workers():
         }), 200
     except Exception as e:
         return jsonify({"status": "error", "message": f"Fetch Error: {str(e)}"}), 500
+
+@worker_bp.route('/cancel_policy', methods=['POST'])
+def cancel_policy():
+    """POST /api/worker/cancel_policy - Marks a policy as cancelled."""
+    try:
+        data = request.get_json() or {}
+        swiggy_id = data.get("swiggy_id")
+        phone = data.get("phone")
+        identifier = swiggy_id or phone
+        
+        if not identifier:
+            return jsonify({"status": "error", "message": "Identifier required for cancellation"}), 400
+            
+        workers = db_handler.get_all_workers()
+        target_worker = None
+        for w in workers:
+            if w.get("swiggy_id") == identifier or w.get("phone") == identifier or w.get("worker_id") == identifier:
+                target_worker = w
+                break
+        
+        if not target_worker:
+            return jsonify({"status": "error", "message": "Worker not found"}), 404
+            
+        # Update the status
+        target_worker["policy_status"] = "cancelled"
+        target_worker["cancelled_at"] = datetime.now().isoformat()
+        
+        # In a real system we would update the DB record. 
+        # In this simplistic db_handler/memory mode, it's already updated in the reference.
+        
+        return jsonify({
+            "status": "success", 
+            "message": "Policy cancelled successfully",
+            "data": target_worker
+        }), 200
+        
+    except Exception as e:
+        return jsonify({"status": "error", "message": f"Cancellation Error: {str(e)}"}), 500
